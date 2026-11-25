@@ -31,9 +31,83 @@ commit them or paste the certificate anywhere.
 flutter run --dart-define-from-file=agora.local.json
 ```
 
-iOS needs a Mac: open `ios/Runner.xcworkspace` once to pick a signing team.
-Use a real iPhone (PiP doesn't work in the simulator). Screen sharing is
-Android-only in this POC (iOS needs a separate Broadcast Upload Extension).
+For iPhone, see section 2a.
+
+## 2a. iPhone (needs a Mac)
+
+Nothing has been built or tested on iOS yet. These steps were written without
+a Mac, so the first build may need small fixes.
+
+Needs: Xcode, CocoaPods, a real iPhone on iOS 16.6 or newer (PiP does not
+work in the simulator), and an Apple developer account to sign the app.
+
+1. Token server: same as step 2 in section 1, but on macOS use
+   `cp secrets.local.example.json secrets.local.json`. Get the App ID and
+   certificate from the Agora console yourself. Never send the certificate
+   over chat or email.
+2. App config: copy `agora.local.example.json` to `agora.local.json`.
+   `127.0.0.1` does **not** work on an iPhone (that trick is Android USB only).
+   Use the `Phones on same Wi-Fi` address the token server printed, e.g.
+   `http://192.168.1.20:8080`, with the iPhone on the same Wi-Fi.
+3. Signing: open `ios/Runner.xcworkspace` in Xcode → Runner → Signing &
+   Capabilities → pick your Team. If Xcode says the bundle ID
+   `com.qispine.poc.agoraPoc` is taken, change it to something unique.
+4. Run (installs the CocoaPods on the first run):
+   ```
+   flutter pub get
+   flutter run --dart-define-from-file=agora.local.json
+   ```
+   On first launch the iPhone may ask for the developer to be trusted:
+   Settings → General → VPN & Device Management.
+5. In the app, allow Camera, Microphone and **Local Network**. If Local
+   Network is denied, the token request fails ("could not connect").
+   Turn it back on in Settings → Agora Poc.
+
+To test with an Android phone at the same time, both apps must use the same
+App ID and channel.
+
+**Built differently on iOS, on purpose:**
+- No screen sharing (the button is hidden). iOS needs a separate Broadcast
+  Upload Extension that this POC doesn't have.
+- The Android-only fixes do not apply: the ongoing-call notification service,
+  the process kill on swipe-away, and the PiP block during the share prompt.
+  iOS keeps the call alive with the `audio` background mode instead.
+- PiP is drawn by iOS itself, not by the app.
+- Snapshots and recordings are saved in the app's Documents folder. Open
+  the Files app → On My iPhone → Agora Poc to get them.
+
+**Expected iOS limit:** iOS normally stops the camera when an app goes to
+the background. In PiP or with the screen locked, the other person may see
+your video freeze while sound carries on. Keeping the camera running needs
+Apple's multitasking-camera entitlement (not in this POC).
+
+### iPhone checklist
+
+Run with one iPhone and one Android phone. Write down pass/fail and anything
+odd, and save the event log (More → Event log) for any failure.
+
+| # | Test | Pass if |
+|---|------|---------|
+| i1 | First launch | Camera and mic prompts show with our text; preview appears |
+| i2 | Deny camera, then allow it in Settings, return to the app | iOS restarts the app when a permission changes; preview works after it reopens |
+| i3 | Mic/speaker test and network test | Hear yourself; network numbers shown |
+| i4 | Join with the Android phone | Both see and hear each other; names correct |
+| i5 | Mute / video off / flip camera | The Android side sees the right icons, no stuck video |
+| i6 | Chat, raise hand | Arrive on both phones |
+| i7 | Doctor (host) on each side: Ask to mute, Mute all, Remove | Prompts arrive; Remove ends the call on the other phone |
+| i8 | Snapshot, Record 10 s | Files appear in the Files app and play |
+| i9 | Minimise (↓) | Floating window over Home; tap to return |
+| i10 | Swipe home | System PiP with live video; tap to return to the call |
+| i11 | Close the PiP window (×) | Note what happens: call continues or ends |
+| i12 | Lock the screen 30 s | Android side still hears you (video may freeze, see above) |
+| i13 | Wi-Fi off 10 s, then on | "Reconnecting…", then back without rejoining |
+| i14 | Turn Wi-Fi off, then try to join | "Still trying…" + Cancel after ~10 s |
+| i15 | Token expiry 120 s (`AGORA_TOKEN_EXPIRY_SECONDS`) | "Token renewed" in log, call carries on |
+| i16 | Rotate the phone | Layout switches, no overlap |
+| i17 | Leave on the iPhone | Android side sees them leave within about a second |
+| i18 | Swipe the app away during a call | Android side sees them leave; reopening starts clean |
+| i19 | Incoming phone call during the call | Note what happens to audio and video, and after hanging up |
+| i20 | AirPods / Bluetooth headset | Sound switches to the headset and back |
 
 ## 3. Adding more people
 
