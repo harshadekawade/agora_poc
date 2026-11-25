@@ -1,0 +1,7 @@
+{
+  "AGORA_APP_ID": "paste-app-id-here",
+  "AGORA_CHANNEL": "qispine-poc",
+  "AGORA_TOKEN_SERVER_URL": "http://127.0.0.1:8080",
+  "AGORA_TOKEN_EXPIRY_SECONDS": "3600",
+  "AGORA_TOKEN": ""
+}

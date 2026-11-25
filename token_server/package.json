@@ -1,0 +1,14 @@
+{
+  "name": "agora-poc-token-server",
+  "version": "1.0.0",
+  "description": "Local Agora RTC token server for the POC",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "agora-token": "2.0.7"
+  },
+  "private": true
+}
