@@ -35,8 +35,9 @@ For iPhone, see section 2a.
 
 ## 2a. iPhone (needs a Mac)
 
-Nothing has been built or tested on iOS yet. These steps were written without
-a Mac, so the first build may need small fixes.
+First built and run on an iPhone on 2026-11-25 (see "iPhone results" below).
+The steps below worked as written; no code changes were needed for iOS.
+If `flutter` is managed by FVM, use `fvm flutter`.
 
 Needs: Xcode, CocoaPods, a real iPhone on iOS 16.6 or newer (PiP does not
 work in the simulator), and an Apple developer account to sign the app.
@@ -176,8 +177,53 @@ Known limits:
   the slow-upload test still needs repeating with a real phone as sharer on
   real mobile data.
 
-Not yet tested: token server (needs App Certificate), echo test, token
-renewal, encryption, chat/host actions between two phones, 3+ people.
+Not yet tested: echo test, token renewal, encryption, chat/host actions
+between two phones.
+
+## iPhone results (iPhone iOS 26.5 + Vivo V2503 Android 17, 2026-11-25)
+
+Debug and profile builds, both phones on the same 2.4 GHz Wi-Fi, token
+server on the Mac.
+
+Working:
+- iOS build, signing and install: first try, no code fixes.
+- Token server: first real use; tokens for both phones and the screen share.
+- Join in 73–130 ms, names on both sides, mute / video off / flip camera
+  (each shows on the other phone), speaker ↔ earpiece, leave.
+- Screen share Vivo → iPhone (first attempt): tile, auto speaker view, stop.
+- Recording on Android: MP4s play (720×1280 ~15 fps, 360×640 ~5 fps).
+- System PiP on both phones; blur, beauty, AI noise suppression.
+
+Fixed: the top bar overflowed by 23 px for one frame while Android's PiP
+window closes (PiP reports inactive while the window is still ~100 px wide).
+It now hides below 200 px width.
+
+Problems found:
+- Video froze 1–15 s at a time. The iPhone's network was bad/veryBad while
+  the Vivo's was excellent; the Wi-Fi was 2.4 GHz with router ping up to
+  118 ms. Not an app bug, but repeat on 5 GHz before judging video quality.
+- Screen share failed 6 times in a row with `DeviceNoPermission` after the
+  first success. Android logs show the consent dialog opened and closed
+  normally, so the cause is unclear (possibly "A single app" chosen without
+  picking an app). Retry with "Entire screen".
+- The screen-share connection joins before the consent dialog is answered,
+  so other phones briefly show a nameless "camera off" tile.
+- Recording stops with `recorderReasonConfigChanged` when the recorded
+  stream changes resolution (camera flip, or the grid switching that person
+  to the low stream when a 3rd person joins).
+- After a rejoin on bad Wi-Fi, the iPhone never got "Patient left".
+  Repeat on good Wi-Fi.
+- Android logs "Handler on a dead thread" (camera2, inside Agora) and SELinux
+  `avc: denied` warnings. Harmless.
+- `flutter run --profile` does not stream the app's `[AgoraPOC]` logs to the
+  terminal; use `adb logcat -s flutter` on Android or the in-app Event log.
+
+Shared channel: other testers joined `qispine-poc` at the same time (one
+with their own token server, one "Guest" that sent no name). Give each
+tester their own `AGORA_CHANNEL` so tests don't mix.
+
+iPhone checklist so far: i1 ✅ (log), i4 ✅, i5 ✅, i17 ✅ (once).
+Not yet run: i2, i3, i6–i16, i18–i20.
 
 ## Code layout
 
@@ -197,5 +243,5 @@ token_server/    Node token server (official agora-token 2.0.7)
 Only `data/agora/` and `presentation/video/` import Agora. To try another
 vendor, write new adapters and override the providers in `call_providers.dart`.
 
-Tests: `flutter test` (58 tests: controllers, layout rules, message format,
+Tests: `flutter test` (96 tests: controllers, layout rules, message format,
 token client).

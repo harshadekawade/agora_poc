@@ -18,12 +18,20 @@ class CallTopBar extends ConsumerWidget {
     required this.onOpenParticipants,
   });
 
+  /// Narrower than this the bar can't fit (minimise + people button alone
+  /// need ~150 px). Happens for a frame while Android's PiP window closes:
+  /// PiP already reports inactive but the window is still ~100 px wide.
+  static const _minWidth = 200.0;
+
   final CallState state;
   final VoidCallback onMinimise;
   final VoidCallback onOpenParticipants;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (MediaQuery.sizeOf(context).width < _minWidth) {
+      return const SizedBox.shrink();
+    }
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isRecording = ref.watch(
